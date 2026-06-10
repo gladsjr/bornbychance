@@ -111,8 +111,7 @@ function buildNarrative(result) {
     const hoje = today.value, diff = hoje - age;
     if (diff > 3)
       story.push(`Hoje, no mesmo lugar, a expectativa de vida é de cerca de ${hoje.toFixed(0)} anos — ` +
-        `${diff.toFixed(0)} a mais do que você viveu. O presente que reclamamos é, ` +
-        "estatisticamente, um dos melhores momentos para se estar vivo.");
+        `${diff.toFixed(0)} a mais do que você viveu.`);
   }
 
   return { headline, story };

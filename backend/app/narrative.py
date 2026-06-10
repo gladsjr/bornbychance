@@ -178,6 +178,5 @@ def _contrast_today(place: str, age: int) -> str | None:
         return None
     return (
         f"Hoje, no mesmo lugar, a expectativa de vida é de cerca de {hoje:.0f} anos — "
-        f"{diff:.0f} a mais do que você viveu. O presente que reclamamos é, "
-        "estatisticamente, um dos melhores momentos para se estar vivo."
+        f"{diff:.0f} a mais do que você viveu."
     )
