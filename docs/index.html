@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Born by Chance — a loteria do nascimento</title>
+  <meta name="description" content="Escolha um lugar e uma época, gire a roleta do nascimento e descubra, a partir de dados reais, a vida que provavelmente teria — e como morreria." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="wrap">
+    <header class="hero">
+      <h1>Born by Chance</h1>
+      <p class="sub">
+        Você não escolheu quando nem onde nasceu. Quase ninguém na história escolheu.
+        Escolha um lugar e uma época, gire a roleta do nascimento e descubra,
+        <strong>a partir de dados reais</strong>, a vida que provavelmente teria — e como morreria.
+      </p>
+    </header>
+
+    <section class="controls">
+      <div class="field">
+        <label for="place">Lugar</label>
+        <select id="place"><option>carregando…</option></select>
+      </div>
+
+      <div class="field years">
+        <label>Época (anos)</label>
+        <div class="year-inputs">
+          <input id="yearFrom" type="number" min="-10000" max="2023" value="1300" />
+          <span>até</span>
+          <input id="yearTo" type="number" min="-10000" max="2023" value="1400" />
+        </div>
+        <small>Use números negativos para a.C. (ex.: -500)</small>
+      </div>
+
+      <div class="presets" id="presets"></div>
+
+      <button id="drawBtn" class="draw" disabled>carregando dados…</button>
+    </section>
+
+    <section id="result" class="result hidden"></section>
+
+    <footer class="foot">
+      <p>
+        Cada número exibido vem de uma fonte pública e citável (Our World in Data, Maddison Project,
+        ONU, WHO) ou de uma estimativa de demografia histórica, sempre identificada com seu nível de confiança.
+        A idade da morte é sorteada de uma tábua de vida (modelo de Siler) calibrada para a
+        expectativa de vida e a mortalidade infantil reais do lugar e da época.
+      </p>
+      <p><a href="https://github.com/gladsjr/bornbychance" target="_blank" rel="noopener">Código-fonte e metodologia no GitHub</a></p>
+    </footer>
+  </main>
+
+  <script src="engine.js"></script>
+  <script src="narrative.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

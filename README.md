@@ -42,34 +42,57 @@ o desenvolvimento, condicionada a idade e sexo, com a mortalidade materna real i
 
 ## Como rodar
 
+O app rodando é **100% estático** (HTML/CSS/JS na pasta `docs/`): não há servidor.
+O Python serve apenas para **gerar os dados** (`docs/data.json`) a partir dos datasets
+reais. Para regenerar os dados:
+
 ```bash
 pip install -r requirements.txt
-python scripts/download_data.py        # baixa os datasets reais (~7 arquivos)
-python -m uvicorn backend.app.main:app --reload --port 8077
-# abra http://127.0.0.1:8077
+python scripts/download_data.py     # baixa os datasets reais para backend/data/raw/
+python scripts/build_static.py      # empacota tudo em docs/data.json (~2,5 MB)
 ```
+
+Para ver o site localmente, basta servir a pasta `docs/` por HTTP:
+
+```bash
+python -m http.server 8000 --directory docs
+# abra http://localhost:8000
+```
+
+### Publicação (GitHub Pages)
+
+O site é servido da pasta `docs/` na branch `main`. Em
+**Settings → Pages → Build and deployment**, escolha *Deploy from a branch*,
+branch `main` e pasta `/docs`. O endereço fica em
+`https://gladsjr.github.io/bornbychance`.
 
 ## Estrutura
 
 ```
-backend/
-  app/
-    main.py          API FastAPI (/api/places, /api/draw)
-    engine.py        o sorteio: junta tudo numa vida
-    data_loader.py   carrega os CSV reais com fallback lugar->região->Mundo
-    curated.py       estimativas históricas para épocas sem medição direta
-    life_tables.py   modelo de Siler: idade da morte a partir de e0 e q5 reais
-    causes.py        causa da morte (transição epidemiológica)
-    narrative.py     monta a narrativa em português
-    sources.py       registro central de fontes citáveis
-  data/raw/          CSVs baixados (reproduzíveis via scripts/download_data.py)
-frontend/            página única (HTML/CSS/JS), sem framework
+docs/                  o site estático publicado (GitHub Pages)
+  index.html           a página
+  style.css            estilo
+  engine.js            o sorteio: dados, modelo de Siler, causas, motor
+  narrative.js         monta a narrativa em português
+  app.js               interface (chama o motor no próprio navegador)
+  data.json            todos os dados reais, empacotados (gerado pelo build)
+backend/app/           camada de dados em Python (usada para gerar data.json)
+  data_loader.py       carrega os CSV reais; fallback lugar->região->Mundo; população
+  curated.py           estimativas históricas para épocas sem medição direta
+  causes.py            perfis de causa de morte (transição epidemiológica)
+  sources.py           registro central de fontes citáveis
+  data/raw/            CSVs baixados (reproduzíveis via scripts/download_data.py)
 scripts/
-  download_data.py   baixa os datasets públicos
+  download_data.py     baixa os datasets públicos
+  build_static.py      empacota os dados em docs/data.json
 ```
+
+> O `backend/app/{main,engine,life_tables,narrative}.py` contém a versão original
+> em Python (servidor FastAPI), mantida como referência. A versão publicada usa o
+> porte em JavaScript em `docs/`.
 
 ## Status
 
-Protótipo funcional. Próximos passos possíveis: causas de morte por idade com dados
-GBD licenciados, perfis regionais de violência/guerra históricos, distribuição de
+Funcional como site estático. Próximos passos possíveis: causas de morte por idade com
+dados GBD licenciados, perfis regionais de violência/guerra históricos, distribuição de
 fertilidade, e um modo "compare duas épocas lado a lado".
