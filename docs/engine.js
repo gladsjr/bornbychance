@@ -56,8 +56,11 @@ function resolveRaw(metric, entity, year) {
     const [value, yearUsed, dist] = _interpPairs(arr, year);
     let confidence = baseConf, note = "";
     if (dist > 0) {
-      if (dist <= 10) note = `ano mais próximo com dado: ${yearUsed}`;
-      else if (dist <= 60) {
+      // Janela de extrapolação curta (15 anos): projetar dados de 1950 para
+      // 1900 atravessaria a transição demográfica e inflaria a idade da morte.
+      // Além disso, cai-se para a série do Mundo, que tem dado real mais antigo.
+      if (dist <= 8) note = `ano mais próximo com dado: ${yearUsed}`;
+      else if (dist <= 15) {
         confidence = baseConf === "alta" ? "media" : "baixa";
         note = `extrapolado do dado de ${yearUsed} (${dist} anos de distância)`;
       } else continue;

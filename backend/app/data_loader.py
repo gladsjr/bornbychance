@@ -205,10 +205,12 @@ class DataStore:
             confidence = base_conf
             note = ""
             if dist > 0:
-                # extrapolacao para fora da cobertura real
-                if dist <= 10:
+                # Janela de extrapolacao curta (15 anos): projetar dados de 1950
+                # para 1900 atravessaria a transicao demografica e inflaria a
+                # idade da morte; assim caimos para a serie regional/Mundo.
+                if dist <= 8:
                     note = f"ano mais proximo com dado: {year_used}"
-                elif dist <= 60:
+                elif dist <= 15:
                     confidence = "media" if base_conf == "alta" else "baixa"
                     note = f"extrapolado do dado de {year_used} ({dist} anos de distancia)"
                 else:
