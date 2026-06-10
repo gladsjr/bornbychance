@@ -29,6 +29,7 @@ DATASETS = {
     "sex-ratio-at-birth": "sex_ratio_birth.csv",
     "share-of-deaths-by-cause": "deaths_by_cause.csv",
     "maternal-mortality": "maternal_mortality.csv",
+    "population": "population.csv",
 }
 
 

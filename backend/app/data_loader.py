@@ -9,6 +9,7 @@ de confianca, para que a interface nunca apresente um numero sem procedencia.
 """
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,6 +17,15 @@ import numpy as np
 import pandas as pd
 
 RAW_DIR = Path(__file__).resolve().parent.parent / "data" / "raw"
+
+_ISO3 = re.compile(r"^[A-Z]{3}$")  # codigo de pais real (exclui OWID_* dos agregados)
+
+# continentes (valores de owid_region) e aliases de agregados -> regioes a amostrar
+_CONTINENTS = {"Africa", "Asia", "Europe", "North America", "Oceania", "South America"}
+_REGION_ALIASES = {
+    "Americas (UN)": {"North America", "South America"},
+    "Americas": {"North America", "South America"},
+}
 
 # metrica -> (arquivo, coluna_do_valor, source_id)
 METRICS = {
@@ -59,7 +69,10 @@ class DataStore:
         self._source: dict[str, str] = {}
         self._region: dict[str, str] = {}  # entity -> owid_region
         self._entities: set[str] = set()
+        self._pop: dict[str, np.ndarray] = {}   # pais -> Nx2 (ano, populacao)
+        self._countries: set[str] = set()       # entidades que sao paises reais (ISO3)
         self._load()
+        self._load_population()
 
     def _load(self) -> None:
         for metric, (filename, col, source_id) in METRICS.items():
@@ -83,6 +96,66 @@ class DataStore:
                     "entity"
                 ).itertuples(index=False):
                     self._region.setdefault(str(entity), str(region))
+
+    def _load_population(self) -> None:
+        """Carrega populacao historica por pais (so paises reais, fronteiras atuais)."""
+        path = self.raw_dir / "population.csv"
+        if not path.exists():
+            return
+        df = pd.read_csv(path, usecols=["entity", "code", "year", "population_historical"])
+        df = df.dropna(subset=["population_historical", "code"])
+        for (entity, code), grp in df.groupby(["entity", "code"], sort=False):
+            if not _ISO3.match(str(code)):
+                continue  # pula agregados (OWID_*) e estados historicos
+            arr = grp[["year", "population_historical"]].to_numpy(dtype=float)
+            arr = arr[arr[:, 0].argsort()]
+            self._pop[str(entity)] = arr
+            self._countries.add(str(entity))
+
+    def is_country(self, entity: str) -> bool:
+        return entity in self._countries
+
+    def _pop_at(self, country: str, year: int) -> float:
+        arr = self._pop.get(country)
+        if arr is None or len(arr) == 0:
+            return 0.0
+        years, vals = arr[:, 0], arr[:, 1]
+        if year <= years[0]:
+            return float(vals[0])
+        if year >= years[-1]:
+            return float(vals[-1])
+        return float(np.interp(year, years, vals))
+
+    def sample_birthplace(
+        self, selected: str, year: int, rng: np.random.Generator
+    ) -> tuple[str, float, float] | None:
+        """
+        Sorteia um pais concreto ponderado pela populacao no ano dado.
+        Retorna (pais, populacao_do_pais, fracao_da_populacao_do_pool) ou None
+        se 'selected' ja for um pais (nao ha o que sortear).
+        """
+        if self.is_country(selected):
+            return None
+        # define o conjunto de paises elegiveis
+        regions: set[str] | None = None
+        if selected in _CONTINENTS:
+            regions = {selected}
+        elif selected in _REGION_ALIASES:
+            regions = _REGION_ALIASES[selected]
+        pool = [
+            c for c in self._countries
+            if regions is None or self._region.get(c) in regions
+        ]
+        weights = np.array([self._pop_at(c, year) for c in pool], dtype=float)
+        mask = weights > 0
+        pool = [c for c, m in zip(pool, mask) if m]
+        weights = weights[mask]
+        if len(pool) == 0 or weights.sum() <= 0:
+            return None
+        total = float(weights.sum())
+        probs = weights / total
+        idx = int(rng.choice(len(pool), p=probs))
+        return pool[idx], float(weights[idx]), float(weights[idx] / total)
 
     # ---- API publica -------------------------------------------------------
 

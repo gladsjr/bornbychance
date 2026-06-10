@@ -57,9 +57,29 @@ def draw(entity: str, year_from: int, year_to: int, seed: int | None = None) -> 
 
     facts: list[Fact] = []
     used_sources: set[str] = set()
+    store = get_store()
+
+    # --- local de nascimento -----------------------------------------------
+    # Se o lugar escolhido for um agregado (Mundo, um continente), sorteia um
+    # pais concreto ponderado pela populacao da epoca. A vida e entao calculada
+    # com os dados reais desse pais.
+    birthplace = entity
+    birthplace_sampled = False
+    bp = store.sample_birthplace(entity, birth_year, rng)
+    if bp is not None:
+        birthplace, bp_pop, bp_share = bp
+        birthplace_sampled = True
+        used_sources.add("owid_population")
+        facts.append(Fact(
+            "local", "Onde você nasceu", birthplace, "alta", "owid_population",
+            f"sorteado entre os lugares de '{entity}' por peso populacional em {birth_year}: "
+            f"~{bp_pop/1e6:.1f} mi de habitantes, {bp_share*100:.1f}% da população do recorte",
+        ))
+
+    effective_entity = birthplace
 
     def record(metric: str, **kw) -> Resolved | None:
-        r = _resolve(metric, entity, birth_year, **kw)
+        r = _resolve(metric, effective_entity, birth_year, **kw)
         if r is not None:
             used_sources.add(r.source_id)
         return r
@@ -82,8 +102,7 @@ def draw(entity: str, year_from: int, year_to: int, seed: int | None = None) -> 
     e0_val = e0_overall.value if e0_overall else 30.0
     # tenta e0 especifico por sexo so com dado real; senao aplica diferencial
     sex_metric = "life_expectancy_female" if sex == "feminino" else "life_expectancy_male"
-    store = get_store()
-    sex_look = store.resolve(sex_metric, entity, birth_year)
+    sex_look = store.resolve(sex_metric, effective_entity, birth_year)
     if sex_look is not None:
         e0_used = sex_look.value
         e0_conf = sex_look.confidence
@@ -160,6 +179,8 @@ def draw(entity: str, year_from: int, year_to: int, seed: int | None = None) -> 
     return {
         "input": {"place": entity, "year_from": year_from, "year_to": year_to},
         "birth_year": birth_year,
+        "birthplace": birthplace,
+        "birthplace_sampled": birthplace_sampled,
         "sex": sex,
         "age_at_death": age_at_death,
         "cause": cause,

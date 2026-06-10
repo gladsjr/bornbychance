@@ -78,6 +78,15 @@ SOURCES: dict[str, Source] = {
         license="CC BY 4.0",
         note="Mortes maternas por 100.000 nascidos vivos, 1985+ (séries históricas para alguns países).",
     ),
+    "owid_population": Source(
+        id="owid_population",
+        title="Population (long-run, modern borders)",
+        publisher="Our World in Data (HYDE 3.2, Gapminder, UN WPP)",
+        url="https://ourworldindata.org/population-growth",
+        license="CC BY 4.0",
+        note="Populacao por pais (fronteiras atuais) desde 10.000 a.C. Usada para "
+        "sortear o local de nascimento ponderado pela populacao da epoca.",
+    ),
     "siler_model": Source(
         id="siler_model",
         title="Siler competing-hazards mortality model",
